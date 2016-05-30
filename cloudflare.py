@@ -1,11 +1,12 @@
 #!/usr/bin/env python
-
 import datetime
 import logging
+import socket
+import struct
 
 import requests
+import datadog
 from apscheduler.schedulers.blocking import BlockingScheduler
-from datadog import statsd
 from decouple import config
 
 
@@ -16,9 +17,25 @@ URL = ('https://api.cloudflare.com/client/v4/zones/'
        '{}/analytics/dashboard?since=-30'.format(ZONE))
 DEAD_MANS_SNITCH_URL = config('DEAD_MANS_SNITCH_URL', None)
 
-scheduler = BlockingScheduler()
-until = None
 
+# via http://stackoverflow.com/a/6556951/107114
+def get_default_gateway_linux():
+    """Read the default gateway directly from /proc."""
+    try:
+        with open("/proc/net/route") as fh:
+            for line in fh:
+                fields = line.strip().split()
+                if fields[1] != '00000000' or not int(fields[3], 16) & 2:
+                    continue
+
+                return socket.inet_ntoa(struct.pack("<L", int(fields[2], 16)))
+    except IOError:
+        return 'localhost'
+
+
+scheduler = BlockingScheduler()
+statsd = datadog.DogStatsd(host=get_default_gateway_linux())
+until = None
 logging.basicConfig(level=logging.INFO)
 
 
