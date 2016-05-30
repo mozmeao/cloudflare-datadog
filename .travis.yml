@@ -31,4 +31,4 @@ deploy:
     script: bin/deploy-travis.sh $DEIS_CONTROLLER_US_WEST $DEIS_PROD_APPLICATION
     on:
       tags: true
-      repo: mozmar/
+      repo: mozmar/cloudflare-datadog
