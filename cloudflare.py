@@ -66,8 +66,8 @@ def job_cloudflare2datadog():
             name = 'cloudflare.mozilla_org.status_codes.{}'.format(status)
             metrics[name].append((time.mktime(point.timetuple()), value))
 
-    for metric, points in metrics.items():
-        datadog.api.Metric.send(metric=metric, points=points)
+    if metrics:
+        datadog.api.Metric.send([dict(metric=metric, points=points) for metric, points in metrics.items()])
 
 
 def run():
