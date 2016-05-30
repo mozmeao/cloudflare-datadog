@@ -1,3 +1,4 @@
-requests
-datadog
-python-decouple
+APScheduler==3.0.4
+requests==2.10.0
+datadog==0.12.0
+python-decouple==3.0
