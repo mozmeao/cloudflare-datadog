@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 import datetime
 import logging
-import socket
-import struct
+import time
+from collections import defaultdict
 
-import requests
 import datadog
+import requests
 from apscheduler.schedulers.blocking import BlockingScheduler
 from decouple import config
+from dateutil import tz
 
 
 ZONE = config('ZONE')
@@ -17,26 +18,14 @@ URL = ('https://api.cloudflare.com/client/v4/zones/'
        '{}/analytics/dashboard?since=-30'.format(ZONE))
 DEAD_MANS_SNITCH_URL = config('DEAD_MANS_SNITCH_URL', None)
 
-
-# via http://stackoverflow.com/a/6556951/107114
-def get_default_gateway_linux():
-    """Read the default gateway directly from /proc."""
-    try:
-        with open("/proc/net/route") as fh:
-            for line in fh:
-                fields = line.strip().split()
-                if fields[1] != '00000000' or not int(fields[3], 16) & 2:
-                    continue
-
-                return socket.inet_ntoa(struct.pack("<L", int(fields[2], 16)))
-    except IOError:
-        return 'localhost'
-
-
 scheduler = BlockingScheduler()
-statsd = datadog.DogStatsd(host=get_default_gateway_linux())
 until = None
 logging.basicConfig(level=logging.INFO)
+utc_tz = tz.gettz('UTC')
+local_tz = tz.gettz()
+
+datadog.initialize(api_key=config('DATADOG_API_KEY'),
+                   app_key=config('DATADOG_APP_KEY'))
 
 
 def ping_dms(function):
@@ -60,18 +49,25 @@ def job_cloudflare2datadog():
         'X-Auth-Key': AUTH_KEY,
         'Content-Type': 'application/json',
     })
+    response.raise_for_status()
 
     data = response.json()
-
     timeserries = data['result']['timeseries']
+    metrics = defaultdict(list)
+
     for timespan in timeserries:
         if until and until != timespan['since']:
             continue
         until = timespan['until']
 
+        point = datetime.datetime.strptime(timespan['until'], '%Y-%m-%dT%H:%M:%SZ')
+        point = point.replace(tzinfo=utc_tz).astimezone(local_tz)
         for status, value in timespan['requests']['http_status'].items():
-            name = 'cloudflare.mozilla-org.g.status_codes.{}'.format(status)
-            statsd.gauge(name, value)
+            name = 'cloudflare.mozilla_org.status_codes.{}'.format(status)
+            metrics[name].append((time.mktime(point.timetuple()), value))
+
+    for metric, points in metrics.items():
+        datadog.api.Metric.send(metric=metric, points=points)
 
 
 def run():
