@@ -1,0 +1,34 @@
+sudo: required
+services:
+  - docker
+language: python
+env:
+  global:
+    # Deis
+    - DEIS_PROD_APPLICATION=cloudflare-datadog-sync
+    - DEIS_USERNAME=travis
+    - DEIS_CONTROLLER_US_WEST=https://deis.us-west.moz.works
+
+    # Docker
+    - DOCKER_REPOSITORY=mozorg/cloudflare-datadog-sync
+    - DOCKER_EMAIL="foo@example.com"
+    - DOCKER_USERNAME="mozjenkins"
+before_install:
+  - docker --version
+  - echo "ENV GIT_SHA ${TRAVIS_COMMIT}" >> Dockerfile
+install:
+  # Take advantage of docker caching by pulling previously built images.
+  - docker pull ${DOCKER_REPOSITORY}:last_successful_build || true
+  - docker pull ${DOCKER_REPOSITORY}:${TRAVIS_COMMIT} || true
+  - docker build -t ${DOCKER_REPOSITORY}:${TRAVIS_COMMIT} --pull=true .
+
+before_script:
+  - env > .env
+script:
+  - exit 0
+deploy:
+  - provider: script
+    script: bin/deploy-travis.sh $DEIS_CONTROLLER_US_WEST $DEIS_PROD_APPLICATION
+    on:
+      tags: true
+      repo: mozmar/
