@@ -17,6 +17,14 @@ AUTH_KEY = config('AUTH_KEY')
 URL = ('https://api.cloudflare.com/client/v4/zones/'
        '{}/analytics/dashboard?since=-30'.format(ZONE))
 DEAD_MANS_SNITCH_URL = config('DEAD_MANS_SNITCH_URL', None)
+STATS_KEY_PREFIX = config('STATS_KEY_PREFIX', default='cloudflare')
+if not STATS_KEY_PREFIX.endswith('.'):
+    STATS_KEY_PREFIX += '.'
+
+CLOUDFLARE_HTTP_STATUS_CODES = [200, 206, 301, 302, 304, 400, 403,
+                                404, 405, 408, 409, 410, 412, 444,
+                                499, 500, 502, 503, 504, 522, 523,
+                                524, 525]
 
 scheduler = BlockingScheduler()
 until = None
@@ -62,12 +70,50 @@ def job_cloudflare2datadog():
 
         point = datetime.datetime.strptime(timespan['until'], '%Y-%m-%dT%H:%M:%SZ')
         point = point.replace(tzinfo=utc_tz).astimezone(local_tz)
-        for status, value in timespan['requests']['http_status'].items():
-            name = 'cloudflare.mozilla_org.status_codes.{}'.format(status)
-            metrics[name].append((time.mktime(point.timetuple()), value))
+        timepoint = time.mktime(point.timetuple())
+
+        def _add_data(name, value):
+            metrics[name].append((timepoint, value))
+
+        # Status codes
+        for status_code in CLOUDFLARE_HTTP_STATUS_CODES:
+            value = timespan['requests']['http_status'].get(str(status_code), 0)
+            name = STATS_KEY_PREFIX + 'status_codes.{}'.format(status_code)
+            _add_data(name, value)
+
+        # Requests
+        name = STATS_KEY_PREFIX + 'requests.'
+        _add_data(name + 'all', timespan['requests']['all'])
+        _add_data(name + 'cached', timespan['requests']['cached'])
+        _add_data(name + 'uncached', timespan['requests']['uncached'])
+        _add_data(name + 'ssl.encrypted', timespan['requests']['ssl']['encrypted'])
+        _add_data(name + 'ssl.unencrypted', timespan['requests']['ssl']['unencrypted'])
+
+        # Bandwidth
+        name = STATS_KEY_PREFIX + 'bandwidth.'
+        _add_data(name + 'all', timespan['bandwidth']['all'])
+        _add_data(name + 'cached', timespan['bandwidth']['cached'])
+        _add_data(name + 'uncached', timespan['bandwidth']['uncached'])
+        _add_data(name + 'ssl.encrypted', timespan['bandwidth']['ssl']['encrypted'])
+        _add_data(name + 'ssl.unencrypted', timespan['bandwidth']['ssl']['unencrypted'])
+
+        # Threats
+        name = STATS_KEY_PREFIX + 'threats.'
+        _add_data(name + 'all', timespan['threats']['all'])
+
+        # Pageviews
+        name = STATS_KEY_PREFIX + 'pageviews.'
+        _add_data(name + 'all', timespan['pageviews']['all'])
+        for engine, value in timespan['pageviews'].get('search_engines', {}).items():
+            _add_data(name + 'search_engines.' + engine, value)
+
+        # IPs
+        name = STATS_KEY_PREFIX + 'uniques.'
+        _add_data(name + 'all', timespan['uniques']['all'])
 
     if metrics:
-        datadog.api.Metric.send([dict(metric=metric, points=points) for metric, points in metrics.items()])
+        data = [dict(metric=metric, points=points) for metric, points in metrics.items()]
+        datadog.api.Metric.send(data)
 
 
 def run():
