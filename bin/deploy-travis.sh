@@ -6,8 +6,8 @@ APP=$2
 
 docker login -e "$DOCKER_EMAIL" -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD"
 docker push ${DOCKER_REPOSITORY}:${TRAVIS_COMMIT}
-docker tag -f ${DOCKER_REPOSITORY}:${TRAVIS_COMMIT} ${DOCKER_REPOSITORY}:last_successful_build
-docker push ${DOCKER_REPOSITORY}:last_successful_build
+docker tag -f ${DOCKER_REPOSITORY}:${TRAVIS_COMMIT} ${DOCKER_REPOSITORY}:latest
+docker push ${DOCKER_REPOSITORY}:latest
 
 # Install deis client
 curl -sSL http://deis.io/deis-cli/install.sh | sh
