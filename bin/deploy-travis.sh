@@ -10,6 +10,6 @@ docker tag ${DOCKER_REPOSITORY}:${TRAVIS_COMMIT} ${DOCKER_REPOSITORY}:latest
 docker push ${DOCKER_REPOSITORY}:latest
 
 # Install deis client
-curl -sSL http://deis.io/deis-cli/install.sh | sh
+./bin/deis-cli-install.sh
 ./deis login $DEIS --username $DEIS_USERNAME --password $DEIS_PASSWORD
 ./deis pull ${DOCKER_REPOSITORY}:${TRAVIS_COMMIT} -a $APP
