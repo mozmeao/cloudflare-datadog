@@ -27,5 +27,5 @@ deploy:
   - provider: script
     script: bin/deploy-travis.sh $DEIS_CONTROLLER_US_WEST $DEIS_PROD_APPLICATION
     on:
-      branch: master
+      tags: true
       repo: mozmar/cloudflare-datadog
