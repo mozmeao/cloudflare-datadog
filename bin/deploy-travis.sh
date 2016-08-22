@@ -4,7 +4,7 @@ set -e
 DEIS=$1
 APP=$2
 
-docker login -e "$DOCKER_EMAIL" -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD"
+docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD"
 docker push ${DOCKER_REPOSITORY}:${TRAVIS_COMMIT}
 docker tag -f ${DOCKER_REPOSITORY}:${TRAVIS_COMMIT} ${DOCKER_REPOSITORY}:latest
 docker push ${DOCKER_REPOSITORY}:latest

@@ -11,7 +11,6 @@ env:
 
     # Docker
     - DOCKER_REPOSITORY=mozorg/cloudflare-datadog-sync
-    - DOCKER_EMAIL="foo@example.com"
     - DOCKER_USERNAME="mozjenkins"
 before_install:
   - docker --version
