@@ -50,7 +50,7 @@ docker-run: #docker-build
 	docker run -d -P --env-file .env --name ${SHORT_NAME} ${MUTABLE_IMAGE}
 
 docker-shell: #docker-build
-	docker run -it --rm -v ${PWD}:/usr/src/app --entrypoint /bin/bash ${MUTABLE_IMAGE}
+	docker run -it --rm -v ${PWD}:/usr/src/app --env-file .env --entrypoint /bin/sh ${MUTABLE_IMAGE}
 
 docker-ports:
 	@echo "Exposed Ports:"
