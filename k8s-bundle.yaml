@@ -1,0 +1,59 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: dd-cf-agent
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: dd-cf-agent
+    spec:
+      containers:
+      - name: dd-cf-agent
+        image: registry.honestbee.com/honestbee/cloudflare-datadog:latest
+        imagePullPolicy: Always
+        env:
+        - name: "DATADOG_API_KEY"
+          valueFrom: 
+            secretKeyRef:
+              name: dd-cf-agent-secret
+              key: datadog-api-key
+        - name: "DATADOG_APP_KEY"
+          valueFrom: 
+            secretKeyRef:
+              name: dd-cf-agent-secret
+              key: datadog-app-key
+        - name: "STATS_KEY_PREFIX"
+          valueFrom: 
+            secretKeyRef:
+              name: dd-cf-agent-secret
+              key: stats-key-prefix
+        - name: "AUTH_EMAIL"
+          valueFrom: 
+            secretKeyRef:
+              name: dd-cf-agent-secret
+              key: auth-email
+        - name: "AUTH_KEY"
+          valueFrom: 
+            secretKeyRef:
+              name: dd-cf-agent-secret
+              key: auth-key
+        - name: "ZONE"
+          valueFrom: 
+            secretKeyRef:
+              name: dd-cf-agent-secret
+              key: zone
+        - name: "SINCE"
+          valueFrom: 
+            secretKeyRef:
+              name: dd-cf-agent-secret
+              key: since
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+      imagePullSecrets: 
+      - name: honestbee-registry 
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
