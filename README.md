@@ -112,10 +112,10 @@ kubectl get secret dd-cf-agent-secret -o json | jq -r .data[] | while read i; do
 
 When the Kubernetes deployment succeeded, verify the environment variables exist in the pods:
 ```
-kubectl exec -it `kubectl get po -l name=dd-cf-agent -o json | jq -r .items[0].metadata.name` /bin/sh
+kubectl exec -it `kubectl get po -l name=dd-cf-agent -o name | sed 's@^.*/@@'` /bin/sh
 ```
 
 Verify the jobs execute on schedule:
 ```
-kubectl logs -f `kubectl get po -l name=dd-cf-agent -o json | jq -r .items[0].metadata.name`
+kubectl logs -f `kubectl get po -l name=dd-cf-agent -o name | sed 's@^.*/@@'`
 ```
