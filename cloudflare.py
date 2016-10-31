@@ -46,7 +46,7 @@ datadog.initialize(api_key=config('DATADOG_API_KEY'),
 def job_cloudflare2datadog():
     global until
     logger.debug('Requesting CloudFlare logs')
-    response = requests.get(URL, headers={
+    response = requests.get(URL, timeout=10, headers={
         'X-Auth-Email': AUTH_EMAIL,
         'X-Auth-Key': AUTH_KEY,
         'Content-Type': 'application/json',
