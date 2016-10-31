@@ -29,3 +29,4 @@ deploy:
     on:
       tags: true
       repo: mozmar/cloudflare-datadog
+      condition: $(echo ${TRAVIS_TAG} | egrep "^201[6-9][0-9]{4}.[0-9]+")
