@@ -15,13 +15,12 @@ sending timestamps.
 ## Instructions
 Populate the following variables in the environment or a .env file.
 
-
-  *DATADOG_API_KEY*: Datadog API Key
-  *DATADOG_APP_KEY*: Datadog App Key
-  *STATS_KEY_PREFIX*: Prefix for the metrics sent in Datadog.
-  *AUTH_EMAIL*: Cloudflare auth email
-  *AUTH_KEY*: Cloudflare auth key
-  *ZONE*: Cloudflare Zone
+ * *DATADOG_API_KEY*: Datadog API Key
+ * *DATADOG_APP_KEY*: Datadog App Key
+ * *STATS_KEY_PREFIX*: Prefix for the metrics sent in Datadog.
+ * *AUTH_EMAIL*: Cloudflare auth email
+ * *AUTH_KEY*: Cloudflare auth key
+ * *ZONE*: Cloudflare Zone
 
 
 ### Shell
