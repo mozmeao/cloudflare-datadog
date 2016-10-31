@@ -4,6 +4,7 @@ import logging
 import time
 from collections import defaultdict
 
+import babis
 import datadog
 import requests
 from apscheduler.schedulers.blocking import BlockingScheduler
@@ -36,20 +37,8 @@ datadog.initialize(api_key=config('DATADOG_API_KEY'),
                    app_key=config('DATADOG_APP_KEY'))
 
 
-def ping_dms(function):
-    """Pings Dead Man's Snitch after job completion if URL is set."""
-    def _ping():
-        function()
-        if DEAD_MANS_SNITCH_URL:
-            utcnow = datetime.datetime.utcnow()
-            payload = {'m': 'Run {} on {}'.format(function.__name__, utcnow.isoformat())}
-            requests.get(DEAD_MANS_SNITCH_URL, params=payload)
-    _ping.__name__ = function.__name__
-    return _ping
-
-
 @scheduler.scheduled_job('interval', minutes=1, max_instances=1, coalesce=True)
-@ping_dms
+@babis.decorator(ping_after=DEAD_MANS_SNITCH_URL)
 def job_cloudflare2datadog():
     global until
     response = requests.get(URL, headers={
