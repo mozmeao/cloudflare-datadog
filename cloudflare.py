@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import datetime
 import logging
+import sys
 import time
 from collections import defaultdict
 
@@ -12,6 +13,7 @@ from decouple import config
 from dateutil import tz
 
 
+LOG_LEVEL = config('LOG_LEVEL', default='INFO', cast=lambda x: getattr(logging, x))
 ZONE = config('ZONE')
 AUTH_EMAIL = config('AUTH_EMAIL')
 AUTH_KEY = config('AUTH_KEY')
@@ -27,9 +29,11 @@ CLOUDFLARE_HTTP_STATUS_CODES = [200, 206, 301, 302, 304, 400, 403,
                                 499, 500, 502, 503, 504, 522, 523,
                                 524, 525]
 
+logger = logging.getLogger(sys.argv[0])
+logging.basicConfig(level=LOG_LEVEL)
+
 scheduler = BlockingScheduler()
 until = None
-logging.basicConfig(level=logging.INFO)
 utc_tz = tz.gettz('UTC')
 local_tz = tz.gettz()
 
@@ -41,6 +45,7 @@ datadog.initialize(api_key=config('DATADOG_API_KEY'),
 @babis.decorator(ping_after=DEAD_MANS_SNITCH_URL)
 def job_cloudflare2datadog():
     global until
+    logger.debug('Requesting CloudFlare logs')
     response = requests.get(URL, headers={
         'X-Auth-Email': AUTH_EMAIL,
         'X-Auth-Key': AUTH_KEY,
@@ -101,12 +106,15 @@ def job_cloudflare2datadog():
         _add_data(name + 'all', timespan['uniques']['all'])
 
     if metrics:
+        logger.debug('Sending metrics to Datadog')
         data = [dict(metric=metric, points=points) for metric, points in metrics.items()]
         datadog.api.Metric.send(data)
+    else:
+        logger.debug('No metrics to send to Datadog')
+
 
 
 def run():
-
     try:
         scheduler.start()
     except (KeyboardInterrupt, SystemExit):
