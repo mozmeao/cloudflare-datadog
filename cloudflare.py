@@ -17,6 +17,7 @@ LOG_LEVEL = config('LOG_LEVEL', default='INFO', cast=lambda x: getattr(logging, 
 ZONE = config('ZONE')
 AUTH_EMAIL = config('AUTH_EMAIL')
 AUTH_KEY = config('AUTH_KEY')
+TAGS = config('TAGS', default=["source:cloudflare"])
 URL = ('https://api.cloudflare.com/client/v4/zones/'
        '{}/analytics/dashboard?since=-30'.format(ZONE))
 DEAD_MANS_SNITCH_URL = config('DEAD_MANS_SNITCH_URL', None)
@@ -107,7 +108,7 @@ def job_cloudflare2datadog():
 
     if metrics:
         logger.debug('Sending metrics to Datadog')
-        data = [dict(metric=metric, points=points) for metric, points in metrics.items()]
+        data = [dict(metric=metric, points=points, tags=TAGS) for metric, points in metrics.items()]
         datadog.api.Metric.send(data)
     else:
         logger.debug('No metrics to send to Datadog')
