@@ -17,7 +17,7 @@ LOG_LEVEL = config('LOG_LEVEL', default='INFO', cast=lambda x: getattr(logging, 
 ZONE = config('ZONE')
 AUTH_EMAIL = config('AUTH_EMAIL')
 AUTH_KEY = config('AUTH_KEY')
-TAGS = config('TAGS', default=["source:cloudflare"])
+TAGS = config('TAGS', default="source:cloudflare,", cast=Csv)
 URL = ('https://api.cloudflare.com/client/v4/zones/'
        '{}/analytics/dashboard?since=-30'.format(ZONE))
 DEAD_MANS_SNITCH_URL = config('DEAD_MANS_SNITCH_URL', None)

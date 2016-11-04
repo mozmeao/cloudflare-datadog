@@ -21,7 +21,7 @@ Populate the following variables in the environment or a .env file.
  * *AUTH_EMAIL*: Cloudflare auth email
  * *AUTH_KEY*: Cloudflare auth key
  * *ZONE*: Cloudflare Zone
- * *TAGS*: List of Datadog Tags
+ * *TAGS*: List of comma separated Datadog Tags
 
 
 ### Shell
