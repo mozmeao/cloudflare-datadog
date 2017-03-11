@@ -15,7 +15,6 @@ sending timestamps.
 ## Instructions
 Populate the following variables in the environment or a `.env` file.
 
-
   `DATADOG_API_KEY`: Datadog API Key
 
   `DATADOG_APP_KEY`: Datadog App Key
@@ -31,6 +30,8 @@ Populate the following variables in the environment or a `.env` file.
   * Free plan can only get 1 hour period analytics (Since: -1440)
   * Pro & Business plans can only get 15 min. periods (Since: -360)
   * Enterprise can get up to 1 min. period analytics (Since: -30)
+ 
+  `TAGS`: List of comma separated Datadog Tags
 
   `ZONE`: Cloudflare Zone
 
@@ -45,8 +46,6 @@ curl https://api.cloudflare.com/client/v4/zones?name=example.com \
  -H "X-Auth-Email: $AUTH_EMAIL" -H "X-Auth-Key: $AUTH_KEY" \
  | jq -r .result[].id
 ```
-
-
 
 ### Shell
 

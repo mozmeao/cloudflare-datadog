@@ -1,20 +1,24 @@
 #!/usr/bin/env python
 import datetime
 import logging
+import sys
 import time
 from collections import defaultdict
 
+import babis
 import datadog
 import requests
 from apscheduler.schedulers.blocking import BlockingScheduler
-from decouple import config
+from decouple import Csv, config
 from dateutil import tz
 
 
+LOG_LEVEL = config('LOG_LEVEL', default='INFO', cast=lambda x: getattr(logging, x))
 ZONE = config('ZONE')
 AUTH_EMAIL = config('AUTH_EMAIL')
 AUTH_KEY = config('AUTH_KEY')
 SINCE = config('SINCE')
+TAGS = config('TAGS', default='source:cloudflare', cast=Csv())
 URL = ('https://api.cloudflare.com/client/v4/zones/'
        '{zone}/analytics/dashboard?since={since}'
        .format(zone=ZONE,since=SINCE))
@@ -28,9 +32,11 @@ CLOUDFLARE_HTTP_STATUS_CODES = [200, 206, 301, 302, 304, 400, 403,
                                 499, 500, 502, 503, 504, 522, 523,
                                 524, 525]
 
+logger = logging.getLogger(sys.argv[0])
+logging.basicConfig(level=LOG_LEVEL)
+
 scheduler = BlockingScheduler()
 until = None
-logging.basicConfig(level=logging.INFO)
 utc_tz = tz.gettz('UTC')
 local_tz = tz.gettz()
 
@@ -38,23 +44,12 @@ datadog.initialize(api_key=config('DATADOG_API_KEY'),
                    app_key=config('DATADOG_APP_KEY'))
 
 
-def ping_dms(function):
-    """Pings Dead Man's Snitch after job completion if URL is set."""
-    def _ping():
-        function()
-        if DEAD_MANS_SNITCH_URL:
-            utcnow = datetime.datetime.utcnow()
-            payload = {'m': 'Run {} on {}'.format(function.__name__, utcnow.isoformat())}
-            requests.get(DEAD_MANS_SNITCH_URL, params=payload)
-    _ping.__name__ = function.__name__
-    return _ping
-
-
 @scheduler.scheduled_job('interval', minutes=1, max_instances=1, coalesce=True)
-@ping_dms
+@babis.decorator(ping_after=DEAD_MANS_SNITCH_URL)
 def job_cloudflare2datadog():
     global until
-    response = requests.get(URL, headers={
+    logger.debug('Requesting CloudFlare logs')
+    response = requests.get(URL, timeout=10, headers={
         'X-Auth-Email': AUTH_EMAIL,
         'X-Auth-Key': AUTH_KEY,
         'Content-Type': 'application/json',
@@ -114,12 +109,15 @@ def job_cloudflare2datadog():
         _add_data(name + 'all', timespan['uniques']['all'])
 
     if metrics:
-        data = [dict(metric=metric, points=points) for metric, points in metrics.items()]
+        logger.debug('Sending metrics to Datadog')
+        data = [dict(metric=metric, points=points, tags=TAGS) for metric, points in metrics.items()]
         datadog.api.Metric.send(data)
+    else:
+        logger.debug('No metrics to send to Datadog')
+
 
 
 def run():
-
     try:
         scheduler.start()
     except (KeyboardInterrupt, SystemExit):
