@@ -1,5 +1,7 @@
 # Cloudflare to Datadog Bridge #
 
+[![Docker Repository on Quay](https://quay.io/repository/honestbee/cloudflare-datadog/status "Docker Repository on Quay")](https://quay.io/repository/honestbee/cloudflare-datadog)
+
 Bridge between Cloudflare Zone Analytics API and Datadog Metrics.
 
 This is built to run as an always-on daemon, fetching data every minute from
