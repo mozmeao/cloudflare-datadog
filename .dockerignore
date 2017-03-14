@@ -1,5 +1,5 @@
 .env
 Makefile
 *.mk
-secret.yaml
 .git/
+
