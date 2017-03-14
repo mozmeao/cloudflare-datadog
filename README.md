@@ -1,7 +1,5 @@
 # Cloudflare to Datadog Bridge #
 
-[![Docker Repository on Quay](https://quay.io/repository/honestbee/cloudflare-datadog/status "Docker Repository on Quay")](https://quay.io/repository/honestbee/cloudflare-datadog)
-
 Bridge between Cloudflare Zone Analytics API and Datadog Metrics.
 
 This is built to run as an always-on daemon, fetching data every minute from
@@ -87,36 +85,3 @@ Push to Registry (update Makefile with registry server applicable)
 make push
 ```
 
-Convert environment file to kubernetes secret and create:
-```
-./env2secret.py -s dd-cf-agent-secret
-kubectl apply -f secret.yaml
-```
-
-Ensure Registry pull secret exists:
-```
-kubectl create secret docker-registry honestbee-registry --docker-server=$DOCKER_REGISTRY --docker-username=$DOCKER_USER --docker-password=$DOCKER_PASSWORD --docker-email=$DOCKER_EMAIL
-```
-
-Deploy the Pods
-```
-kubectl apply -f k8s-bundle.yaml
-```
-
-### Troubleshooting:
-
-Verify the data encoded in the kubernetes secret:
-```
-kubectl get secret dd-cf-agent-secret -o json | jq -r .data[] | while read i; do echo
- $i | base64 -D && echo; done
-```
-
-When the Kubernetes deployment succeeded, verify the environment variables exist in the pods:
-```
-kubectl exec -it `kubectl get po -l name=dd-cf-agent -o name | sed 's@^.*/@@'` /bin/sh
-```
-
-Verify the jobs execute on schedule:
-```
-kubectl logs -f `kubectl get po -l name=dd-cf-agent -o name | sed 's@^.*/@@'`
-```
