@@ -1,0 +1,5 @@
+.env
+Makefile
+*.mk
+.git/
+
