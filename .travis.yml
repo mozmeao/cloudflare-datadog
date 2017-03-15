@@ -10,8 +10,8 @@ env:
     - DEIS_CONTROLLER_US_WEST=https://deis.us-west.moz.works
 
     # Docker
-    - DOCKER_REPOSITORY=mozorg/cloudflare-datadog-sync
-    - DOCKER_USERNAME="mozjenkins"
+    - DOCKER_REPOSITORY=mozmeao/cloudflare-datadog
+    - DOCKER_USERNAME="moztravis"
 before_install:
   - docker --version
   - echo "ENV GIT_SHA ${TRAVIS_COMMIT}" >> Dockerfile
@@ -23,6 +23,11 @@ script:
   - flake8 .
   - docker build -t ${DOCKER_REPOSITORY}:${TRAVIS_COMMIT} --pull=true .
 deploy:
+  - provider: script
+    script: bin/push-to-dockerhub.sh
+    on:
+      branch: master
+      repo: mozmar/cloudflare-datadog
   - provider: script
     script: bin/deploy-travis.sh $DEIS_CONTROLLER_US_WEST $DEIS_PROD_APPLICATION
     on:
