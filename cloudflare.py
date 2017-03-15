@@ -17,7 +17,7 @@ LOG_LEVEL = config('LOG_LEVEL', default='INFO', cast=lambda x: getattr(logging, 
 ZONE = config('ZONE')
 AUTH_EMAIL = config('AUTH_EMAIL')
 AUTH_KEY = config('AUTH_KEY')
-SINCE = config('SINCE')
+SINCE = config('SINCE', default='-360')
 TAGS = config('TAGS', default='source:cloudflare', cast=Csv())
 URL = ('https://api.cloudflare.com/client/v4/zones/'
        '{zone}/analytics/dashboard?since={since}'
