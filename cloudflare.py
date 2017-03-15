@@ -21,7 +21,7 @@ SINCE = config('SINCE')
 TAGS = config('TAGS', default='source:cloudflare', cast=Csv())
 URL = ('https://api.cloudflare.com/client/v4/zones/'
        '{zone}/analytics/dashboard?since={since}'
-       .format(zone=ZONE,since=SINCE))
+       .format(zone=ZONE, since=SINCE))
 DEAD_MANS_SNITCH_URL = config('DEAD_MANS_SNITCH_URL', None)
 STATS_KEY_PREFIX = config('STATS_KEY_PREFIX', default='cloudflare')
 if not STATS_KEY_PREFIX.endswith('.'):
@@ -114,7 +114,6 @@ def job_cloudflare2datadog():
         datadog.api.Metric.send(data)
     else:
         logger.debug('No metrics to send to Datadog')
-
 
 
 def run():
