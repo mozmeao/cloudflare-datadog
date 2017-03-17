@@ -7,25 +7,11 @@ from collections import defaultdict
 
 import babis
 import datadog
-import requests
+from CloudFlare import CloudFlare
 from apscheduler.schedulers.blocking import BlockingScheduler
-from decouple import Csv, config
 from dateutil import tz
 
-
-LOG_LEVEL = config('LOG_LEVEL', default='INFO', cast=lambda x: getattr(logging, x))
-ZONE = config('ZONE')
-AUTH_EMAIL = config('AUTH_EMAIL')
-AUTH_KEY = config('AUTH_KEY')
-SINCE = config('SINCE', default='-360')
-TAGS = config('TAGS', default='source:cloudflare', cast=Csv())
-URL = ('https://api.cloudflare.com/client/v4/zones/'
-       '{zone}/analytics/dashboard?since={since}'
-       .format(zone=ZONE, since=SINCE))
-DEAD_MANS_SNITCH_URL = config('DEAD_MANS_SNITCH_URL', None)
-STATS_KEY_PREFIX = config('STATS_KEY_PREFIX', default='cloudflare')
-if not STATS_KEY_PREFIX.endswith('.'):
-    STATS_KEY_PREFIX += '.'
+import config
 
 CLOUDFLARE_HTTP_STATUS_CODES = [200, 206, 301, 302, 304, 400, 403,
                                 404, 405, 408, 409, 410, 412, 444,
@@ -33,31 +19,26 @@ CLOUDFLARE_HTTP_STATUS_CODES = [200, 206, 301, 302, 304, 400, 403,
                                 524, 525]
 
 logger = logging.getLogger(sys.argv[0])
-logging.basicConfig(level=LOG_LEVEL)
+logging.basicConfig(level=config.LOG_LEVEL)
 
 scheduler = BlockingScheduler()
 until = None
 utc_tz = tz.gettz('UTC')
 local_tz = tz.gettz()
 
-datadog.initialize(api_key=config('DATADOG_API_KEY'),
-                   app_key=config('DATADOG_APP_KEY'))
+cf = CloudFlare(email=config.CF_API_EMAIL, token=config.CF_API_KEY)
+datadog.initialize(api_key=config.DATADOG_API_KEY, app_key=config.DATADOG_APP_KEY)
 
 
-@scheduler.scheduled_job('interval', minutes=1, max_instances=1, coalesce=True)
-@babis.decorator(ping_after=DEAD_MANS_SNITCH_URL)
+@scheduler.scheduled_job('interval', minutes=config.FETCH_INTERVAL,
+                         max_instances=1, coalesce=True)
+@babis.decorator(ping_after=config.DEAD_MANS_SNITCH_URL)
 def job_cloudflare2datadog():
     global until
     logger.debug('Requesting CloudFlare logs')
-    response = requests.get(URL, timeout=10, headers={
-        'X-Auth-Email': AUTH_EMAIL,
-        'X-Auth-Key': AUTH_KEY,
-        'Content-Type': 'application/json',
-    })
-    response.raise_for_status()
+    timeserries = cf.zones.analytics.dashboard.get(
+        config.ZONE, params={'since': config.SINCE})['timeseries']
 
-    data = response.json()
-    timeserries = data['result']['timeseries']
     metrics = defaultdict(list)
 
     for timespan in timeserries:
@@ -75,11 +56,11 @@ def job_cloudflare2datadog():
         # Status codes
         for status_code in CLOUDFLARE_HTTP_STATUS_CODES:
             value = timespan['requests']['http_status'].get(str(status_code), 0)
-            name = STATS_KEY_PREFIX + 'status_codes.{}'.format(status_code)
+            name = config.STATS_KEY_PREFIX + 'status_codes.{}'.format(status_code)
             _add_data(name, value)
 
         # Requests
-        name = STATS_KEY_PREFIX + 'requests.'
+        name = config.STATS_KEY_PREFIX + 'requests.'
         _add_data(name + 'all', timespan['requests']['all'])
         _add_data(name + 'cached', timespan['requests']['cached'])
         _add_data(name + 'uncached', timespan['requests']['uncached'])
@@ -87,7 +68,7 @@ def job_cloudflare2datadog():
         _add_data(name + 'ssl.unencrypted', timespan['requests']['ssl']['unencrypted'])
 
         # Bandwidth
-        name = STATS_KEY_PREFIX + 'bandwidth.'
+        name = config.STATS_KEY_PREFIX + 'bandwidth.'
         _add_data(name + 'all', timespan['bandwidth']['all'])
         _add_data(name + 'cached', timespan['bandwidth']['cached'])
         _add_data(name + 'uncached', timespan['bandwidth']['uncached'])
@@ -95,22 +76,23 @@ def job_cloudflare2datadog():
         _add_data(name + 'ssl.unencrypted', timespan['bandwidth']['ssl']['unencrypted'])
 
         # Threats
-        name = STATS_KEY_PREFIX + 'threats.'
+        name = config.STATS_KEY_PREFIX + 'threats.'
         _add_data(name + 'all', timespan['threats']['all'])
 
         # Pageviews
-        name = STATS_KEY_PREFIX + 'pageviews.'
+        name = config.STATS_KEY_PREFIX + 'pageviews.'
         _add_data(name + 'all', timespan['pageviews']['all'])
         for engine, value in timespan['pageviews'].get('search_engines', {}).items():
             _add_data(name + 'search_engines.' + engine, value)
 
         # IPs
-        name = STATS_KEY_PREFIX + 'uniques.'
+        name = config.STATS_KEY_PREFIX + 'uniques.'
         _add_data(name + 'all', timespan['uniques']['all'])
 
     if metrics:
         logger.debug('Sending metrics to Datadog')
-        data = [dict(metric=metric, points=points, tags=TAGS) for metric, points in metrics.items()]
+        data = [dict(metric=metric, points=points, tags=config.TAGS)
+                for metric, points in metrics.items()]
         datadog.api.Metric.send(data)
     else:
         logger.debug('No metrics to send to Datadog')
