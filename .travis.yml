@@ -27,10 +27,10 @@ deploy:
     script: bin/push-to-dockerhub.sh
     on:
       branch: master
-      repo: mozmar/cloudflare-datadog
+      repo: mozmeao/cloudflare-datadog
   - provider: script
     script: bin/deploy-travis.sh $DEIS_CONTROLLER_US_WEST $DEIS_PROD_APPLICATION
     on:
       tags: true
-      repo: mozmar/cloudflare-datadog
+      repo: mozmeao/cloudflare-datadog
       condition: $(echo ${TRAVIS_TAG} | egrep "^201[6-9][0-9]{4}.[0-9]+")
