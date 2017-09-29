@@ -7,7 +7,7 @@ env:
     # Deis
     - DEIS_PROD_APPLICATION=cloudflare-datadog-sync
     - DEIS_USERNAME=travis
-    - DEIS_CONTROLLER_US_WEST=https://deis.us-west.moz.works
+    - DEIS_CONTROLLER_US_WEST=https://deis.portland.moz.works
 
     # Docker
     - DOCKER_REPOSITORY=mozmeao/cloudflare-datadog
