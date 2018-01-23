@@ -2,6 +2,7 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: cfdd
+  namespace: cfdd
   labels:
     app: cfdd
 spec:
@@ -29,9 +30,12 @@ spec:
             cpu: 100m
             memory: 128Mi
         env:
-          STATS_KEY_PREFIX: {{ CFDD_STATS_PREFIX }}
-          SINCE: "{{ CFDD_SINCE }}"
-          TAGS: "{{ CFDD_TAGS }}"
+        - name: STATS_KEY_PREFIX
+          value: {{ CFDD_STATS_PREFIX }}
+        - name: SINCE
+          value: {{ CFDD_SINCE }}
+        - name: TAGS
+          value: {{ CFDD_TAGS }}
         - name: DATADOG_API_KEY
           valueFrom:
             secretKeyRef:
@@ -50,7 +54,7 @@ spec:
         - name: CF_API_KEY
           valueFrom:
             secretKeyRef:
-              name: {{ CFDD_SECRETS_NAME }}y
+              name: {{ CFDD_SECRETS_NAME }}
               key: CF_API_KEY
         - name: ZONE
           valueFrom:
