@@ -1,0 +1,70 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: cfdd
+  namespace: cfdd
+  labels:
+    app: cfdd
+spec:
+  replicas: {{ CFDD_REPLICAS }}
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: cfdd
+    spec:
+      restartPolicy: Always
+      containers:
+      - name: cfdd
+        image: "{{ CFDD_IMAGE }}:{{ CFDD_TAG }}"
+        imagePullPolicy: {{ CFDD_IMAGE_PULL_POLICY }}
+        resources:
+          limits:
+            cpu: 100m
+            memory: 128Mi
+          requests:
+            cpu: 100m
+            memory: 128Mi
+        env:
+        - name: STATS_KEY_PREFIX
+          value: {{ CFDD_STATS_PREFIX }}
+        - name: SINCE
+          value: {{ CFDD_SINCE }}
+        - name: TAGS
+          value: {{ CFDD_TAGS }}
+        - name: DATADOG_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ CFDD_SECRETS_NAME }}
+              key: DATADOG_API_KEY
+        - name: DATADOG_APP_KEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ CFDD_SECRETS_NAME }}
+              key: DATADOG_APP_KEY
+        - name: CF_API_EMAIL
+          valueFrom:
+            secretKeyRef:
+              name: {{ CFDD_SECRETS_NAME }}
+              key: CF_API_EMAIL
+        - name: CF_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ CFDD_SECRETS_NAME }}
+              key: CF_API_KEY
+        - name: ZONE
+          valueFrom:
+            secretKeyRef:
+              name: {{ CFDD_SECRETS_NAME }}
+              key: ZONE
+        - name: DEAD_MANS_SNITCH_URL
+          valueFrom:
+            secretKeyRef:
+              name: {{ CFDD_SECRETS_NAME }}
+              key: DEAD_MANS_SNITCH_URL
+  
+
