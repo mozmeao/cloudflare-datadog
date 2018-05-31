@@ -1,6 +1,6 @@
 export CFDD_REPLICAS ?= 1
 export CFDD_IMAGE ?= mozmeao/cloudflare-datadog
-export CFDD_TAG ?= 32dd3d6539131dff444239d235ad2e79fb498bc9
+export CFDD_TAG ?= de54a6462e63c8a288f0e2d33499a5058b712497
 export CFDD_IMAGE_PULL_POLICY ?= IfNotPresent
 export CFDD_SECRETS_NAME ?= cfdd-secrets
 export CFDD_STATS_PREFIX ?= "cfdd"
