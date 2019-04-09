@@ -15,8 +15,8 @@ import config
 
 CLOUDFLARE_HTTP_STATUS_CODES = [200, 206, 301, 302, 304, 400, 403,
                                 404, 405, 408, 409, 410, 412, 444,
-                                499, 500, 502, 503, 504, 522, 523,
-                                524, 525]
+                                499, 500, 502, 503, 504, 521, 522,
+                                523, 524, 525]
 
 logger = logging.getLogger(sys.argv[0])
 logging.basicConfig(level=config.LOG_LEVEL)
