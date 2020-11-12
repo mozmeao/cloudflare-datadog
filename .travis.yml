@@ -6,11 +6,6 @@ python:
   - "2.7"
 env:
   global:
-    # Deis
-    - DEIS_PROD_APPLICATION=cloudflare-datadog-sync
-    - DEIS_USERNAME=travis
-    - DEIS_CONTROLLER_US_WEST=https://deis.portland.moz.works
-
     # Docker
     - DOCKER_REPOSITORY=mozmeao/cloudflare-datadog
     - DOCKER_USERNAME="moztravis"
@@ -30,9 +25,3 @@ deploy:
     on:
       branch: master
       repo: mozmeao/cloudflare-datadog
-  - provider: script
-    script: bin/deploy-travis.sh $DEIS_CONTROLLER_US_WEST $DEIS_PROD_APPLICATION
-    on:
-      tags: true
-      repo: mozmeao/cloudflare-datadog
-      condition: $(echo ${TRAVIS_TAG} | egrep "^201[6-9][0-9]{4}.[0-9]+")
